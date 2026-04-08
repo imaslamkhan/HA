@@ -1,0 +1,169 @@
+from datetime import date
+
+from pydantic import BaseModel, Field, field_validator, model_validator
+from app.schemas.base import TimestampedResponse
+from typing import Optional
+from enum import Enum
+
+
+class BookingModeEnum(str, Enum):
+    DAILY = "daily"
+    MONTHLY = "monthly"
+
+
+class BookingCreateRequest(BaseModel):
+    hostel_id: str
+    room_id: str
+    bed_id: Optional[str] = None  # Can be assigned later during approval
+    booking_mode: BookingModeEnum
+    check_in_date: date
+    check_out_date: date
+    full_name: str = Field(min_length=2, max_length=255)
+    date_of_birth: Optional[date] = None
+    gender: Optional[str] = Field(None, max_length=50)
+    occupation: Optional[str] = Field(None, max_length=255)
+    institution: Optional[str] = Field(None, max_length=255)
+    current_address: Optional[str] = None
+    id_type: Optional[str] = Field(None, max_length=100)
+    emergency_contact_name: Optional[str] = Field(None, max_length=255)
+    emergency_contact_phone: Optional[str] = Field(None, max_length=30)
+    emergency_contact_relationship: Optional[str] = Field(None, max_length=100)
+    guardian_name: Optional[str] = Field(None, max_length=255)
+    guardian_phone: Optional[str] = Field(None, max_length=30)
+    special_requirements: Optional[str] = None
+    base_rent_amount: float = Field(ge=0, default=0)
+    security_deposit: float = Field(ge=0, default=0)
+    booking_advance: float = Field(ge=0, default=0)
+    grand_total: float = Field(ge=0, default=0)
+
+    @model_validator(mode="after")
+    def validate_dates_and_totals(self) -> "BookingCreateRequest":
+        if self.check_out_date <= self.check_in_date:
+            raise ValueError("check_out_date must be after check_in_date")
+        if self.grand_total == 0:
+            self.grand_total = self.base_rent_amount + self.security_deposit
+        return self
+    
+    @field_validator("gender")
+    @classmethod
+    def validate_gender(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        normalized = v.lower()
+        if normalized in ["m", "male"]:
+            return "M"
+        if normalized in ["f", "female"]:
+            return "F"
+        if normalized in ["other"]:
+            return "Other"
+        raise ValueError("Gender must be 'M', 'F', or 'Other'")
+
+
+class BookingResponse(TimestampedResponse):
+    id: str
+    booking_number: str
+    visitor_id: str
+    status: str
+    booking_mode: str
+    hostel_id: str
+    room_id: str
+    bed_id: str | None = None
+    check_in_date: date
+    check_out_date: date
+    total_nights: int | None = None
+    total_months: int | None = None
+    base_rent_amount: float
+    security_deposit: float
+    booking_advance: float
+    grand_total: float
+    full_name: str
+    rejection_reason: str | None = None
+    cancellation_reason: str | None = None
+    approved_by: str | None = None
+
+
+class BookingInitiateRequest(BaseModel):
+    hostel_id: str
+    room_id: str
+    bed_id: str | None = None
+    booking_mode: BookingModeEnum
+    check_in_date: date
+    check_out_date: date
+    base_rent_amount: float = Field(ge=0)
+    security_deposit: float = Field(ge=0, default=0)
+    booking_advance: float = Field(ge=0, default=0)
+    grand_total: float = Field(ge=0, default=0)
+
+    @model_validator(mode="after")
+    def validate_dates_and_totals(self) -> "BookingInitiateRequest":
+        if self.check_out_date <= self.check_in_date:
+            raise ValueError("check_out_date must be after check_in_date")
+        if self.grand_total == 0:
+            self.grand_total = self.base_rent_amount + self.security_deposit
+        return self
+
+
+class BookingInitiateResponse(BaseModel):
+    booking_id: str
+    booking_number: str
+    status: str
+    pricing: dict
+
+
+class BookingApplicantPatchRequest(BaseModel):
+    full_name: str = Field(min_length=2, max_length=255)
+    date_of_birth: Optional[date] = None
+    gender: Optional[str] = Field(None, max_length=50)
+    occupation: Optional[str] = Field(None, max_length=255)
+    institution: Optional[str] = Field(None, max_length=255)
+    current_address: Optional[str] = None
+    id_type: Optional[str] = Field(None, max_length=100)
+    id_document_url: Optional[str] = Field(None, max_length=500)
+    emergency_contact_name: Optional[str] = Field(None, max_length=255)
+    emergency_contact_phone: Optional[str] = Field(None, max_length=30)
+    emergency_contact_relationship: Optional[str] = Field(None, max_length=100)
+    guardian_name: Optional[str] = Field(None, max_length=255)
+    guardian_phone: Optional[str] = Field(None, max_length=30)
+    special_requirements: Optional[str] = None
+
+
+class BookingApprovalRequest(BaseModel):
+    bed_id: str
+    
+
+class BookingRejectionRequest(BaseModel):
+    reason: Optional[str] = None
+
+
+class BookingCancellationRequest(BaseModel):
+    reason: Optional[str] = None
+
+
+class BookingStatusHistoryResponse(TimestampedResponse):
+    booking_id: str
+    old_status: str | None
+    new_status: str
+    changed_by: str | None
+    note: str | None
+
+
+class WaitlistJoinRequest(BaseModel):
+    hostel_id: str
+    room_id: str
+    bed_id: str | None = None
+    booking_mode: BookingModeEnum
+    check_in_date: date
+    check_out_date: date
+
+
+class WaitlistEntryResponse(TimestampedResponse):
+    id: str
+    visitor_id: str
+    hostel_id: str
+    room_id: str
+    bed_id: str | None = None
+    booking_mode: str
+    check_in_date: date
+    check_out_date: date
+    status: str
+    position: int

@@ -1,0 +1,63 @@
+# Import all models in dependency order so SQLAlchemy mapper resolves relationships correctly.
+# Order: user → hostel → room → booking → student → payment → operations
+
+from app.models.user import OTPVerification, RefreshToken, User, UserRole, OTPType  # noqa: F401
+from app.models.hostel import (  # noqa: F401
+    AdminHostelMapping,
+    Hostel,
+    HostelAmenity,
+    HostelImage,
+    HostelStatus,
+    HostelType,
+    SupervisorHostelMapping,
+    VisitorFavorite,
+)
+from app.models.room import Bed, BedStatus, Room, RoomType  # noqa: F401
+from app.models.booking import (  # noqa: F401
+    BedStay,
+    BedStayStatus,
+    Booking,
+    BookingMode,
+    BookingStatus,
+    BookingStatusHistory,
+    Inquiry,
+    WaitlistEntry,
+    WaitlistStatus,
+)
+from app.models.student import Student, StudentStatus  # noqa: F401
+from app.models.payment import Payment, PaymentWebhookEvent  # noqa: F401
+from app.models.operations import (  # noqa: F401
+    AttendanceRecord,
+    Complaint,
+    ComplaintComment,
+    MaintenanceRequest,
+    MessMenu,
+    MessMenuItem,
+    Notice,
+    NoticeRead,
+    Review,
+    Subscription,
+)
+
+__all__ = [
+    # user
+    "User", "UserRole", "OTPType", "RefreshToken", "OTPVerification",
+    # hostel
+    "Hostel", "HostelType", "HostelStatus",
+    "HostelAmenity", "HostelImage",
+    "AdminHostelMapping", "SupervisorHostelMapping", "VisitorFavorite",
+    # room
+    "Room", "RoomType", "Bed", "BedStatus",
+    # booking
+    "Booking", "BookingMode", "BookingStatus",
+    "BookingStatusHistory", "BedStay", "BedStayStatus", "Inquiry",
+    "WaitlistEntry", "WaitlistStatus",
+    # student
+    "Student", "StudentStatus",
+    # payment
+    "Payment", "PaymentWebhookEvent",
+    # operations
+    "Complaint", "ComplaintComment", "AttendanceRecord",
+    "MaintenanceRequest", "Notice", "MessMenu", "MessMenuItem",
+    "Subscription", "Review", "NoticeRead",
+]
